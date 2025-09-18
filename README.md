@@ -5,7 +5,8 @@ Reproduction of configuring pnpm [`minimumReleaseAge`](https://pnpm.io/settings#
 After configuring `minimumReleaseAge` of `10080` minutes (7 days), pnpm correctly prevents installation of `@types/react@19.1.13` (which is 6 days old at the time of writing):
 
 ```bash
-=== Init pnpm package.json===
+# === Init pnpm package.json===
+$ pnpm init
 Wrote to D:\a\repro-pnpm-minimumReleaseAgeExclude-global-cross-platform\repro-pnpm-minimumReleaseAgeExclude-global-cross-platform\package.json
 {
   "name": "repro-pnpm-minimumReleaseAgeExclude-global-cross-platform",
@@ -20,7 +21,9 @@ Wrote to D:\a\repro-pnpm-minimumReleaseAgeExclude-global-cross-platform\repro-pn
   "license": "ISC",
   "packageManager": "pnpm@10.17.0"
 }
-=== Attempt install (should succeed)===
+
+# === Attempt install (should succeed)===
+$ pnpm add @types/react@19.1.13
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Packages: +2
 ++
@@ -28,21 +31,35 @@ Progress: resolved 2, reused 0, downloaded 2, added 2, done
 dependencies:
 + @types/react 19.1.13
 Done in 1.2s using pnpm v10.17.0
+
+$ pnpm remove @types/react
 Packages: -2
 --
 dependencies:
 - @types/react 19.1.13
 Done in 375ms using pnpm v10.17.0
-=== Edit pnpm global config rc to set 7-day minimumReleaseAge ===
-=== debugging ===
+
+# === Edit pnpm global config rc to set 7-day minimumReleaseAge ===
+$ pnpm config set minimumReleaseAge 10080 --global
+
+# === debugging ===
+$ ls "$LOCALAPPDATA/pnpm/config/rc"
 C:\Users\runneradmin\AppData\Local/pnpm/config/rc
+
+$ cat "$LOCALAPPDATA/pnpm/config/rc"
 minimum-release-age=10080
-=== Perl commands ===
-=== After writing ===
+
+# === Perl commands to set minimumReleaseAgeExclude setting ===
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=eslint-config-upleveled\r?$/; $_ .= "minimum-release-age-exclude[]=eslint-config-upleveled\n" if eof && !$exists' "$LOCALAPPDATA/pnpm/config/rc"
+perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=stylelint-config-upleveled\r?$/; $_ .= "minimum-release-age-exclude[]=stylelint-config-upleveled\n" if eof && !$exists' "$LOCALAPPDATA/pnpm/config/rc"
+
+$ cat "$LOCALAPPDATA/pnpm/config/rc"
 minimum-release-age=10080
 minimum-release-age-exclude[]=eslint-config-upleveled
 minimum-release-age-exclude[]=stylelint-config-upleveled
-=== Attempt install again (should fail)===
+
+# === Attempt install again (should fail)===
+$ pnpm add @types/react@19.1.13
  ERR_PNPM_NO_MATCHING_VERSION  No matching version found for @types/react@19.1.13 while fetching it from https://registry.npmjs.org/
 This error happened while installing a direct dependency of D:\a\repro-pnpm-minimumReleaseAgeExclude-global-cross-platform\repro-pnpm-minimumReleaseAgeExclude-global-cross-platform
 The latest release of @types/react is "19.1.13".
