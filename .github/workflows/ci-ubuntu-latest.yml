@@ -1,0 +1,35 @@
+name: CI - ubuntu-latest
+on: push
+
+jobs:
+  ci:
+    name: CI - ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.0
+      - name: Test pnpm minimumReleaseAge
+        run: |
+          printf '=== Init pnpm package.json===\n'
+          pnpm init
+
+          printf '=== Attempt install (should succeed)===\n'
+          pnpm add @types/react@19.1.13
+          pnpm remove @types/react
+
+          printf '=== Edit pnpm global config rc to set 7-day minimumReleaseAge ===\n'
+          pnpm config set minimumReleaseAge 10080 --global
+          printf '=== debugging ===\n'
+          ls "$HOME/.config/pnpm/rc"
+          cat "$HOME/.config/pnpm/rc"
+
+          printf '=== Perl commands ===\n'
+          perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=eslint-config-upleveled\r?$/; $_ .= "minimum-release-age-exclude[]=eslint-config-upleveled\n" if eof && !$exists' "$HOME/.config/pnpm/rc"
+          perl -i -pe '$exists ||= /^minimum-release-age-exclude\[\]=stylelint-config-upleveled\r?$/; $_ .= "minimum-release-age-exclude[]=stylelint-config-upleveled\n" if eof && !$exists' "$HOME/.config/pnpm/rc"
+
+          printf '=== After writing ===\n'
+          cat "$HOME/.config/pnpm/rc"
+
+          printf '=== Attempt install again (should fail)===\n'
+          pnpm add @types/react@19.1.13
